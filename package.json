@@ -8,15 +8,25 @@
     "start": "next start"
   },
   "dependencies": {
+    "aframe": "^1.7.1",
+    "aframe-react": "^4.4.0",
+    "bcrypt": "^6.0.0",
+    "clsx": "^2.1.1",
+    "iron-session": "^8.0.4",
+    "lucide-react": "^0.564.0",
+    "mysql2": "^3.17.1",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "video.js": "^8.23.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/video.js": "^7.3.58",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
