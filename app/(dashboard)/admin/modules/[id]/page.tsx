@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, use } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { 
   ArrowLeft,
   Save,
@@ -19,25 +19,157 @@ import {
   Trash2
 } from 'lucide-react';
 
-export default function AdminModuleDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const router = useRouter();
-  const moduleId = resolvedParams.id;
+// Smart Dummy Data - Database Simulation
+const MODULES_DATABASE = [
+  {
+    id: "1",
+    title: "Simulasi Evakuasi Kebakaran",
+    category: "Kebakaran & Api",
+    description: "Modul pelatihan VR 360° yang mensimulasikan situasi kebakaran di tempat kerja. Pekerja akan belajar prosedur evakuasi darurat, penggunaan APAR (Alat Pemadam Api Ringan), dan jalur evakuasi yang aman.",
+    duration: "15",
+    videoUrl: "https://example.com/vr-videos/kebakaran-360.mp4",
+    thumbnailUrl: "https://example.com/thumbnails/kebakaran.jpg",
+    status: "active" as const,
+    difficulty: "intermediate" as const,
+    learningObjectives: "1. Memahami prosedur evakuasi darurat\n2. Mampu menggunakan APAR dengan benar\n3. Mengenali jalur evakuasi terdekat\n4. Memahami titik kumpul darurat"
+  },
+  {
+    id: "2",
+    title: "Bahaya Alat Berat di Konstruksi",
+    category: "Alat Berat",
+    description: "Simulasi VR yang menampilkan berbagai skenario berbahaya saat bekerja dengan alat berat seperti excavator, crane, dan bulldozer. Pekerja akan belajar zona bahaya, komunikasi dengan operator, dan prosedur keselamatan standar.",
+    duration: "20",
+    videoUrl: "https://example.com/vr-videos/alat-berat-360.mp4",
+    thumbnailUrl: "https://example.com/thumbnails/alat-berat.jpg",
+    status: "active" as const,
+    difficulty: "advanced" as const,
+    learningObjectives: "1. Mengidentifikasi zona bahaya alat berat\n2. Memahami hand signal untuk operator\n3. Mengenali situasi berbahaya\n4. Prosedur keselamatan saat bekerja di sekitar alat berat"
+  },
+  {
+    id: "3",
+    title: "Penggunaan APD yang Benar",
+    category: "APD & Perlindungan",
+    description: "Panduan komprehensif tentang cara memilih, memakai, dan merawat Alat Pelindung Diri (APD) dengan benar. Mencakup helmet, safety shoes, sarung tangan, masker, dan pelindung mata.",
+    duration: "12",
+    videoUrl: "https://example.com/vr-videos/apd-360.mp4",
+    thumbnailUrl: "https://example.com/thumbnails/apd.jpg",
+    status: "active" as const,
+    difficulty: "beginner" as const,
+    learningObjectives: "1. Memilih APD yang sesuai dengan jenis pekerjaan\n2. Cara memakai APD dengan benar\n3. Merawat dan menyimpan APD\n4. Mengenali APD yang sudah tidak layak pakai"
+  },
+  {
+    id: "4",
+    title: "Penanganan Bahan Kimia Berbahaya (B3)",
+    category: "Bahan Kimia",
+    description: "Modul training untuk penanganan material berbahaya dan beracun (B3). Termasuk cara membaca MSDS, prosedur penyimpanan, penanganan tumpahan, dan penggunaan APD khusus.",
+    duration: "18",
+    videoUrl: "https://example.com/vr-videos/b3-360.mp4",
+    thumbnailUrl: "https://example.com/thumbnails/b3.jpg",
+    status: "active" as const,
+    difficulty: "advanced" as const,
+    learningObjectives: "1. Membaca dan memahami MSDS (Material Safety Data Sheet)\n2. Prosedur penyimpanan B3 yang aman\n3. Penanganan tumpahan kimia\n4. Penggunaan APD khusus untuk B3"
+  },
+  {
+    id: "5",
+    title: "Keselamatan Kerja di Ketinggian",
+    category: "Ketinggian",
+    description: "Simulasi bekerja di ketinggian dengan fokus pada penggunaan harness, scaffold, dan fall protection. Pekerja akan belajar teknik three-point contact dan prosedur rescue.",
+    duration: "16",
+    videoUrl: "https://example.com/vr-videos/ketinggian-360.mp4",
+    thumbnailUrl: "https://example.com/thumbnails/ketinggian.jpg",
+    status: "draft" as const,
+    difficulty: "advanced" as const,
+    learningObjectives: "1. Penggunaan full body harness yang benar\n2. Inspeksi peralatan kerja ketinggian\n3. Teknik three-point contact\n4. Prosedur rescue dasar"
+  },
+  {
+    id: "6",
+    title: "Prosedur Lock Out Tag Out (LOTO)",
+    category: "Mesin & Peralatan",
+    description: "Panduan lengkap prosedur LOTO untuk isolasi energi berbahaya sebelum maintenance. Mencakup electrical, mechanical, hydraulic, dan pneumatic energy isolation.",
+    duration: "14",
+    videoUrl: "https://example.com/vr-videos/loto-360.mp4",
+    thumbnailUrl: "https://example.com/thumbnails/loto.jpg",
+    status: "active" as const,
+    difficulty: "intermediate" as const,
+    learningObjectives: "1. Memahami konsep LOTO\n2. Identifikasi sumber energi berbahaya\n3. Prosedur lock out yang benar\n4. Verifikasi isolasi energi"
+  },
+  {
+    id: "7",
+    title: "Penanganan Situasi Darurat Listrik",
+    category: "Kelistrikan",
+    description: "Simulasi penanganan emergency terkait kelistrikan, termasuk electrical shock, arc flash, dan electrical fire. Fokus pada first response dan rescue procedures.",
+    duration: "17",
+    videoUrl: "https://example.com/vr-videos/listrik-360.mp4",
+    thumbnailUrl: "https://example.com/thumbnails/listrik.jpg",
+    status: "draft" as const,
+    difficulty: "advanced" as const,
+    learningObjectives: "1. Mengenali bahaya listrik\n2. First aid untuk electrical shock\n3. Prosedur pemadaman electrical fire\n4. Arc flash protection"
+  },
+  {
+    id: "8",
+    title: "Ergonomi dan Postur Kerja yang Aman",
+    category: "Ergonomi",
+    description: "Panduan tentang ergonomi di tempat kerja untuk mencegah musculoskeletal disorders (MSDs). Mencakup postur angkat beban, setup workstation, dan stretching exercises.",
+    duration: "10",
+    videoUrl: "https://example.com/vr-videos/ergonomi-360.mp4",
+    thumbnailUrl: "https://example.com/thumbnails/ergonomi.jpg",
+    status: "archived" as const,
+    difficulty: "beginner" as const,
+    learningObjectives: "1. Teknik angkat beban yang benar\n2. Setup workstation ergonomis\n3. Stretching exercises untuk pekerja\n4. Mengenali gejala MSDs"
+  }
+];
 
-  // Dummy data - in real app, this would be fetched from API
+export default function AdminModuleDetailPage() {
+  const router = useRouter();
+  const params = useParams();
+  const moduleId = params?.id as string;
+
   const [formData, setFormData] = useState({
-    title: moduleId === "new" ? "" : "Simulasi Evakuasi Kebakaran",
-    category: moduleId === "new" ? "" : "Kebakaran & Api",
-    description: moduleId === "new" ? "" : "Modul pelatihan VR 360° yang mensimulasikan situasi kebakaran di tempat kerja. Pekerja akan belajar prosedur evakuasi darurat, penggunaan APAR (Alat Pemadam Api Ringan), dan jalur evakuasi yang aman.",
-    duration: moduleId === "new" ? "" : "15",
-    videoUrl: moduleId === "new" ? "" : "https://example.com/vr-videos/kebakaran-360.mp4",
-    thumbnailUrl: moduleId === "new" ? "" : "https://example.com/thumbnails/kebakaran.jpg",
-    status: moduleId === "new" ? "draft" : "active",
-    difficulty: moduleId === "new" ? "beginner" : "intermediate",
-    learningObjectives: moduleId === "new" ? "" : "1. Memahami prosedur evakuasi darurat\n2. Mampu menggunakan APAR dengan benar\n3. Mengenali jalur evakuasi terdekat\n4. Memahami titik kumpul darurat"
+    title: "",
+    category: "",
+    description: "",
+    duration: "",
+    videoUrl: "",
+    thumbnailUrl: "",
+    status: "draft" as "active" | "draft" | "archived",
+    difficulty: "beginner" as "beginner" | "intermediate" | "advanced",
+    learningObjectives: ""
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load module data based on ID
+  useEffect(() => {
+    if (moduleId === "new") {
+      // New module - use empty form
+      setIsLoading(false);
+      return;
+    }
+
+    // Simulate fetching data from database
+    const moduleData = MODULES_DATABASE.find(m => m.id === moduleId);
+
+    if (moduleData) {
+      setFormData({
+        title: moduleData.title,
+        category: moduleData.category,
+        description: moduleData.description,
+        duration: moduleData.duration,
+        videoUrl: moduleData.videoUrl,
+        thumbnailUrl: moduleData.thumbnailUrl,
+        status: moduleData.status,
+        difficulty: moduleData.difficulty,
+        learningObjectives: moduleData.learningObjectives
+      });
+    } else {
+      // Module not found - redirect or show error
+      console.warn(`Module with ID ${moduleId} not found`);
+      // Could redirect to modules list or show 404
+    }
+
+    setIsLoading(false);
+  }, [moduleId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -64,6 +196,18 @@ export default function AdminModuleDetailPage({ params }: { params: Promise<{ id
   };
 
   const isNewModule = moduleId === "new";
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-slate-600">Memuat data modul...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
