@@ -308,7 +308,17 @@ rm -rf node_modules package-lock.json
 npm install --legacy-peer-deps
 ```
 
+<<<<<<< HEAD
 ## 🚀 Next Steps
+=======
+## 📝 Lisensi
+
+[MIT-Lisence]
+
+---
+
+## Next Steps
+>>>>>>> 56f3adbf63fa6e21293ca0def5973245d0503765
 
 Untuk melanjutkan ke **Fase 2 (Backend)**:
 
@@ -341,4 +351,8 @@ Untuk melanjutkan ke **Fase 2 (Backend)**:
    DB_PORT=3306
 ```
 
+<<<<<<< HEAD
 *Terakhir diupdate: 14-feb-2026*
+=======
+*Terakhir diupdate: 14-feb-2026*
+>>>>>>> 56f3adbf63fa6e21293ca0def5973245d0503765
