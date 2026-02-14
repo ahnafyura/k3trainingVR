@@ -308,22 +308,6 @@ rm -rf node_modules package-lock.json
 npm install --legacy-peer-deps
 ```
 
----
-
-## 👥 Tim Pengembang
-
-**Fase 1 (Frontend):** [Nama Tim]
-
-**Tech Lead:** [Nama]
-
----
-
-## 📝 Lisensi
-
-[Sesuaikan dengan lisensi proyek Anda]
-
----
-
 ## 🚀 Next Steps
 
 Untuk melanjutkan ke **Fase 2 (Backend)**:
@@ -356,18 +340,5 @@ Untuk melanjutkan ke **Fase 2 (Backend)**:
    DB_NAME=k3_vr_training
    DB_PORT=3306
 ```
-
----
-
-## 📞 Kontak & Support
-
-Jika ada pertanyaan atau issue:
-- 📧 Email: [email-tim]
-- 💬 Slack: [channel-name]
-- 🐛 Issues: [GitHub Issues URL]
-
----
-
-**Happy Coding! 🚀**
 
 *Terakhir diupdate: 14-feb-2026*
