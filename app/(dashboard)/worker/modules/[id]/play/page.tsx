@@ -3,8 +3,9 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { ArrowLeft, Maximize2, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import VRControls from '@/components/vr/VRControls';
 
 // Dynamically import VRPlayer with SSR disabled
 const VRPlayer = dynamic(() => import('@/components/vr/VRPlayer'), {
@@ -19,21 +20,21 @@ const VRPlayer = dynamic(() => import('@/components/vr/VRPlayer'), {
   ),
 });
 
-// Dummy module data (in real app, fetch from API/database)
+// Dummy module data
 const MODULES_DATA: Record<string, any> = {
   "1": {
     title: "Simulasi Evakuasi Kebakaran",
-    videoUrl: "/videos/videoplayback.mp4", // Place your 360° video here
+    videoUrl: "/videos/dummy-360.mp4",
     duration: "15:00"
   },
   "2": {
     title: "Bahaya Alat Berat di Konstruksi",
-    videoUrl: "/videos/videoplayback.mp4",
+    videoUrl: "/videos/dummy-360.mp4",
     duration: "20:00"
   },
   "3": {
     title: "Penggunaan APD yang Benar",
-    videoUrl: "/videos/videoplayback.mp4",
+    videoUrl: "/videos/dummy-360.mp4",
     duration: "12:00"
   }
 };
@@ -44,8 +45,7 @@ export default function VRPlayPage({ params }: { params: Promise<{ id: string }>
   const moduleId = resolvedParams.id;
   
   const [showCompletion, setShowCompletion] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
   const moduleData = MODULES_DATA[moduleId] || {
     title: "Modul K3 VR",
@@ -53,34 +53,27 @@ export default function VRPlayPage({ params }: { params: Promise<{ id: string }>
     duration: "15:00"
   };
 
+  // Get video element reference after A-Frame loads
+  useEffect(() => {
+    const checkVideoElement = setInterval(() => {
+      const video = document.getElementById('vr-video') as HTMLVideoElement;
+      if (video) {
+        setVideoElement(video);
+        clearInterval(checkVideoElement);
+      }
+    }, 500);
+
+    return () => clearInterval(checkVideoElement);
+  }, []);
+
   const handleVideoEnd = () => {
     console.log('Video selesai!');
     setShowCompletion(true);
   };
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-        setIsFullscreen(false);
-      }
-    }
-  };
-
-  const toggleMute = () => {
-    const video = document.getElementById('vr-video') as HTMLVideoElement;
-    if (video) {
-      video.muted = !video.muted;
-      setIsMuted(!isMuted);
-    }
-  };
-
   return (
-    <div className="relative w-full h-screen bg-slate-900 overflow-hidden">
-      {/* Top Navigation Bar */}
+    <div className="h-screen w-full bg-slate-900 overflow-hidden">
+      {/* Top Navigation Bar - Fixed Overlay */}
       <div className="absolute top-0 left-0 right-0 z-50 p-4">
         <div className="flex items-center justify-between">
           {/* Back Button */}
@@ -100,50 +93,31 @@ export default function VRPlayPage({ params }: { params: Promise<{ id: string }>
             <p className="text-blue-300 text-sm">VR 360° Training</p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={toggleMute}
-              className="p-3 bg-slate-900/80 backdrop-blur-md border border-white/10 text-white hover:bg-slate-800/80 rounded-xl transition-all"
-              title={isMuted ? "Unmute" : "Mute"}
-            >
-              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-            </button>
-            <button
-              onClick={toggleFullscreen}
-              className="p-3 bg-slate-900/80 backdrop-blur-md border border-white/10 text-white hover:bg-slate-800/80 rounded-xl transition-all"
-              title="Fullscreen"
-            >
-              <Maximize2 className="w-5 h-5" />
-            </button>
-          </div>
+          {/* Spacer for layout balance */}
+          <div className="w-24"></div>
         </div>
       </div>
 
-      {/* VR Player Component */}
-      <VRPlayer 
-        videoUrl={moduleData.videoUrl}
-        onVideoEnd={handleVideoEnd}
-      />
+      {/* VR Player Container - RELATIVE POSITIONING CONTEXT */}
+      <div className="relative w-full h-full">
+        {/* VR Player Component */}
+        <VRPlayer 
+          videoUrl={moduleData.videoUrl}
+          onVideoEnd={handleVideoEnd}
+        />
 
-      {/* Instructions Overlay (Bottom Left) */}
-      <div className="absolute bottom-4 left-4 z-40 max-w-xs">
-        <div className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-xl p-4 text-white">
-          <h3 className="font-bold text-sm mb-2">Cara Menggunakan VR:</h3>
-          <ul className="text-xs space-y-1 text-slate-300">
-            <li>• Geser mouse/jari untuk melihat sekeliling</li>
-            <li>• Gunakan headset VR untuk pengalaman immersive</li>
-            <li>• Arahkan kursor biru untuk interaksi</li>
-          </ul>
-        </div>
-      </div>
+        {/* VR Controls Overlay - NOW ABSOLUTE WITHIN THIS CONTAINER */}
+        <VRControls videoElement={videoElement} />
 
-      {/* Video Info (Bottom Right) */}
-      <div className="absolute bottom-4 right-4 z-40">
-        <div className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-xl px-4 py-2 text-white">
-          <div className="flex items-center space-x-2 text-sm">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-            <span>VR 360° LIVE</span>
+        {/* Instructions Overlay (Bottom Left) */}
+        <div className="absolute bottom-24 left-4 z-40 max-w-xs">
+          <div className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-xl p-4 text-white">
+            <h3 className="font-bold text-sm mb-2">Cara Menggunakan VR:</h3>
+            <ul className="text-xs space-y-1 text-slate-300">
+              <li>• Geser mouse/jari untuk melihat sekeliling</li>
+              <li>• Gunakan headset VR untuk pengalaman immersive</li>
+              <li>• Arahkan kursor biru untuk interaksi</li>
+            </ul>
           </div>
         </div>
       </div>
