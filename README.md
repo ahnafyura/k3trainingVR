@@ -308,9 +308,7 @@ rm -rf node_modules package-lock.json
 npm install --legacy-peer-deps
 ```
 
-<<<<<<< HEAD
 ## 🚀 Next Steps
-=======
 ## 📝 Lisensi
 
 [MIT-Lisence]
@@ -318,7 +316,6 @@ npm install --legacy-peer-deps
 ---
 
 ## Next Steps
->>>>>>> 56f3adbf63fa6e21293ca0def5973245d0503765
 
 Untuk melanjutkan ke **Fase 2 (Backend)**:
 
