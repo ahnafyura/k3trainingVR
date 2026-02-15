@@ -12,6 +12,7 @@
     "aframe-react": "^4.4.0",
     "bcrypt": "^6.0.0",
     "clsx": "^2.1.1",
+    "firebase": "^12.9.0",
     "iron-session": "^8.0.4",
     "lucide-react": "^0.564.0",
     "mysql2": "^3.17.1",
