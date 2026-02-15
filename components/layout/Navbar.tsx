@@ -10,7 +10,7 @@ interface NavbarProps {
 
 export default function Navbar({ role, isOpen, toggleSidebar }: NavbarProps) {
   return (
-    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
       <div className="flex items-center justify-between px-4 lg:px-8 py-4">
         {/* Left Section: Menu Toggle & Search */}
         <div className="flex items-center space-x-4 flex-1">

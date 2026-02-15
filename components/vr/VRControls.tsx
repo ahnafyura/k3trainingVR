@@ -13,16 +13,16 @@ import {
 
 interface VRControlsProps {
   videoElement: HTMLVideoElement | null;
+  showControls: boolean;
+  onMouseMove?: () => void;
 }
 
-export default function VRControls({ videoElement }: VRControlsProps) {
+export default function VRControls({ videoElement, showControls, onMouseMove }: VRControlsProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-  const [showControls, setShowControls] = useState(true);
-  const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Format time to MM:SS
   const formatTime = (seconds: number): string => {
@@ -76,38 +76,32 @@ export default function VRControls({ videoElement }: VRControlsProps) {
     };
   }, [videoElement]);
 
-  // Auto-hide controls after 3 seconds of inactivity
-  const resetHideTimer = () => {
-    setShowControls(true);
-    
-    if (hideControlsTimeout.current) {
-      clearTimeout(hideControlsTimeout.current);
-    }
-
-    hideControlsTimeout.current = setTimeout(() => {
-      if (isPlaying) {
-        setShowControls(false);
-      }
-    }, 3000);
-  };
-
-  useEffect(() => {
-    resetHideTimer();
-    return () => {
-      if (hideControlsTimeout.current) {
-        clearTimeout(hideControlsTimeout.current);
-      }
-    };
-  }, [isPlaying]);
-
-  // Play/Pause toggle
+  // Play/Pause toggle with Promise handling
   const togglePlayPause = () => {
     if (!videoElement) return;
+    
+    // Check if video is ready to play
+    if (videoElement.readyState < 2) {
+      console.warn('Video not ready yet, readyState:', videoElement.readyState);
+      return;
+    }
     
     if (isPlaying) {
       videoElement.pause();
     } else {
-      videoElement.play();
+      // Handle play() as a Promise
+      const playPromise = videoElement.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Video playback started successfully');
+          })
+          .catch((error) => {
+            console.warn('Autoplay/Play prevented or video not ready:', error);
+            setIsPlaying(false);
+          });
+      }
     }
   };
 
@@ -148,7 +142,21 @@ export default function VRControls({ videoElement }: VRControlsProps) {
     if (!videoElement) return;
     
     videoElement.currentTime = 0;
-    videoElement.play();
+    
+    // Check readyState before playing
+    if (videoElement.readyState >= 2) {
+      const playPromise = videoElement.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Video restarted successfully');
+          })
+          .catch((error) => {
+            console.warn('Restart play prevented:', error);
+          });
+      }
+    }
   };
 
   // Calculate progress percentage
@@ -159,8 +167,8 @@ export default function VRControls({ videoElement }: VRControlsProps) {
       className={`absolute bottom-0 left-0 w-full z-50 transition-all duration-300 ${
         showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
       }`}
-      onMouseMove={resetHideTimer}
-      onMouseEnter={() => setShowControls(true)}
+      onMouseMove={onMouseMove}
+      onMouseEnter={onMouseMove}
     >
       {/* Progress Bar */}
       <div className="relative h-2 bg-slate-900/60 backdrop-blur-sm cursor-pointer group">
@@ -197,7 +205,9 @@ export default function VRControls({ videoElement }: VRControlsProps) {
             {/* Play/Pause Button */}
             <button
               onClick={togglePlayPause}
-              className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 rounded-full transition-all shadow-lg"
+              className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 rounded-full transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!videoElement || videoElement.readyState < 2}
+              title={!videoElement || videoElement.readyState < 2 ? 'Video loading...' : ''}
             >
               {isPlaying ? (
                 <Pause className="w-5 h-5 text-white fill-white" />
