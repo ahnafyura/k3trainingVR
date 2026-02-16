@@ -3,206 +3,205 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Lock, Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
+import { Shield, User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    nik: '',
-    password: '',
-  });
+  const [nik, setNik] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error saat user mulai mengetik
-    if (error) setError('');
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validasi sederhana
-    if (!formData.nik || !formData.password) {
-      setError('NIK dan Password wajib diisi');
-      return;
-    }
-
-    setIsLoading(true);
     setError('');
+    setIsLoading(true);
 
-    // Simulasi API call dengan delay 1.5 detik
+    // Simulate authentication delay
     setTimeout(() => {
-      // Dummy authentication logic
-      if (formData.nik.toLowerCase() === 'admin') {
-        // Redirect ke Admin Dashboard
-        router.push('/admin/dashboard');
-      } else {
-        // Redirect ke Worker Dashboard
-        router.push('/worker/dashboard');
+      // Dummy authentication
+      if (!nik || !password) {
+        setError('NIK dan Password harus diisi');
+        setIsLoading(false);
+        return;
       }
+
+      // Store user data in localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('userNIK', nik);
+        
+        // Determine role based on NIK
+        if (nik.toLowerCase() === 'admin') {
+          localStorage.setItem('userRole', 'admin');
+          localStorage.setItem('userName', 'Admin K3');
+          router.push('/admin/dashboard');
+        } else {
+          localStorage.setItem('userRole', 'worker');
+          localStorage.setItem('userName', 'Pekerja Demo');
+          router.push('/worker/dashboard');
+        }
+      }
+
       setIsLoading(false);
-    }, 1500);
+    }, 1000);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-700"></div>
-      </div>
-
-      {/* Login Card */}
-      <div className="relative w-full max-w-md">
-        {/* Logo/Brand Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/50">
-            <ShieldCheck className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex">
+      {/* Left Section - Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-white">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="flex items-center space-x-3 mb-8">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <Shield className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">K3 VR Training</h1>
+              <p className="text-sm text-slate-600">Portal Pelatihan Keselamatan Kerja</p>
+            </div>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Selamat Datang
-          </h1>
-          <p className="text-blue-200">
-            Masuk ke Aplikasi K3 VR Training
-          </p>
-        </div>
 
-        {/* Glassmorphic Form Card */}
-        <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-3xl p-8">
-          <form onSubmit={handleLogin} className="space-y-6">
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 backdrop-blur-sm">
-                <p className="text-red-200 text-sm text-center">{error}</p>
-              </div>
-            )}
+          {/* Welcome Text */}
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-slate-900 mb-2">
+              Selamat Datang! 👋
+            </h2>
+            <p className="text-slate-600">
+              Silakan login untuk mengakses platform pelatihan K3
+            </p>
+          </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* NIK Input */}
-            <div className="space-y-2">
-              <label htmlFor="nik" className="block text-sm font-medium text-blue-100">
-                Nomor Induk Karyawan (NIK)
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                NIK (Nomor Induk Karyawan)
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-blue-300" />
-                </div>
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   type="text"
-                  id="nik"
-                  name="nik"
-                  value={formData.nik}
-                  onChange={handleInputChange}
+                  value={nik}
+                  onChange={(e) => setNik(e.target.value)}
                   placeholder="Masukkan NIK Anda"
-                  className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  disabled={isLoading}
+                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
               </div>
+              <p className="mt-2 text-xs text-slate-500">
+                Ketik "admin" untuk login sebagai admin
+              </p>
             </div>
 
             {/* Password Input */}
-            <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-blue-100">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-blue-300" />
-                </div>
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="Masukkan password Anda"
-                  className="w-full pl-12 pr-12 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  disabled={isLoading}
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Masukkan password"
+                  className="w-full pl-12 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-blue-300 hover:text-blue-200 transition-colors"
-                  disabled={isLoading}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
             {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center cursor-pointer">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                  className="w-4 h-4 border-slate-300 rounded text-blue-600 focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="ml-2 text-blue-200">Ingat saya</span>
+                <span className="text-sm text-slate-700">Ingat saya</span>
               </label>
-              <button
-                type="button"
-                className="text-blue-300 hover:text-blue-200 transition-colors"
-              >
+              <Link href="#" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                 Lupa password?
-              </button>
+              </Link>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center"
+              className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
-                  Memproses...
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
                 </>
               ) : (
-                'Sign In'
+                <>
+                  <span>Login</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
               )}
             </button>
-
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-transparent text-blue-300">atau</span>
-              </div>
-            </div>
-
-            {/* Register Link */}
-            <div className="text-center">
-              <p className="text-blue-200">
-                Belum punya akun?{' '}
-                <Link
-                  href="/register"
-                  className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
-                >
-                  Daftar di sini
-                </Link>
-              </p>
-            </div>
           </form>
-        </div>
 
-        {/* Info Text */}
-        <div className="mt-6 text-center">
-          <p className="text-blue-300/60 text-xs">
-            Dilindungi oleh sistem keamanan K3 VR Training
+          {/* Register Link */}
+          <p className="mt-6 text-center text-sm text-slate-600">
+            Belum punya akun?{' '}
+            <Link href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">
+              Daftar sekarang
+            </Link>
           </p>
+        </div>
+      </div>
+
+      {/* Right Section - Hero */}
+      <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
+        {/* Decorative Elements */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40"></div>
+        
+        <div className="relative flex flex-col items-center justify-center p-12 text-white">
+          <div className="max-w-md text-center">
+            <h2 className="text-4xl font-bold mb-4">
+              Keselamatan Kerja Dimulai dari Pelatihan
+            </h2>
+            <p className="text-lg text-blue-100 mb-8">
+              Platform VR 360° untuk pelatihan K3 yang immersive dan interaktif
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4">
+                <p className="text-3xl font-bold mb-1">500+</p>
+                <p className="text-sm text-blue-100">Pekerja Terlatih</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4">
+                <p className="text-3xl font-bold mb-1">25+</p>
+                <p className="text-sm text-blue-100">Modul K3</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4">
+                <p className="text-3xl font-bold mb-1">98%</p>
+                <p className="text-sm text-blue-100">Kepuasan</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4">
+                <p className="text-3xl font-bold mb-1">4.9</p>
+                <p className="text-sm text-blue-100">Rating</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
