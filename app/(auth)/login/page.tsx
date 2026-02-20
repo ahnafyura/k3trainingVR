@@ -3,231 +3,243 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Loader2, ShieldCheck, Mail } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [nik, setNik] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (error) setError('');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    
+    if (!formData.email || !formData.password) {
+      setError('Email dan Password wajib diisi');
+      return;
+    }
+
     setIsLoading(true);
+    setError('');
 
-    // Simulate authentication delay
-    setTimeout(() => {
-      // Dummy authentication
-      if (!nik || !password) {
-        setError('NIK dan Password harus diisi');
-        setIsLoading(false);
-        return;
-      }
+    try {
+      // Login dengan Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
 
-      // Store user data in localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('userNIK', nik);
-        
-        // Determine role based on NIK
-        if (nik.toLowerCase() === 'admin') {
-          localStorage.setItem('userRole', 'admin');
-          localStorage.setItem('userName', 'Admin K3');
+      // Ambil data profil dari Firestore
+      const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        // Redirect berdasarkan role dari Firestore
+        if (userData.role === 'admin') {
           router.push('/admin/dashboard');
         } else {
-          localStorage.setItem('userRole', 'worker');
-          localStorage.setItem('userName', 'Pekerja Demo');
           router.push('/worker/dashboard');
         }
+      } else {
+        // User ada di Auth tapi belum ada profil di Firestore
+        setError('Data profil tidak ditemukan. Hubungi admin.');
       }
-
+    } catch (err: any) {
+      // Handle Firebase Auth errors
+      switch (err.code) {
+        case 'auth/user-not-found':
+          setError('Akun tidak ditemukan. Silakan daftar terlebih dahulu.');
+          break;
+        case 'auth/wrong-password':
+          setError('Password salah. Silakan coba lagi.');
+          break;
+        case 'auth/invalid-email':
+          setError('Format email tidak valid.');
+          break;
+        case 'auth/invalid-credential':
+          setError('Email atau password salah.');
+          break;
+        case 'auth/too-many-requests':
+          setError('Terlalu banyak percobaan. Coba lagi nanti.');
+          break;
+        default:
+          setError('Gagal login. Silakan coba lagi.');
+          console.error('Login error:', err);
+      }
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
-      {/* Decorative Background Pattern */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-30"></div>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-700"></div>
+      </div>
 
-      {/* Main Container */}
-      <div className="relative min-h-screen flex items-center justify-center p-4 lg:p-8">
-        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          
-          {/* Left Section - Login Form */}
-          <div className="order-2 lg:order-1">
-            {/* Glassmorphic Form Card */}
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl p-8 lg:p-10">
-              {/* Logo */}
-              <div className="flex items-center space-x-3 mb-8">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/50">
-                  <Shield className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-white">K3 VR Training</h1>
-                  <p className="text-sm text-slate-300">Portal Pelatihan Keselamatan Kerja</p>
-                </div>
+      {/* Login Card */}
+      <div className="relative w-full max-w-md">
+        {/* Logo/Brand Section */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/50">
+            <ShieldCheck className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-2">
+            Selamat Datang
+          </h1>
+          <p className="text-blue-200">
+            Masuk ke Aplikasi K3 VR Training
+          </p>
+        </div>
+
+        {/* Glassmorphic Form Card */}
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-3xl p-8">
+          <form onSubmit={handleLogin} className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 backdrop-blur-sm">
+                <p className="text-red-200 text-sm text-center">{error}</p>
               </div>
+            )}
 
-              {/* Welcome Text */}
-              <div className="mb-8">
-                <h2 className="text-3xl font-bold text-white mb-2">
-                  Selamat Datang! 👋
-                </h2>
-                <p className="text-slate-300">
-                  Silakan login untuk mengakses platform pelatihan K3
-                </p>
-              </div>
-
-              {/* Error Message */}
-              {error && (
-                <div className="mb-6 p-4 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-xl">
-                  <p className="text-sm text-red-200">{error}</p>
+            {/* Email Input */}
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-medium text-blue-100">
+                Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-blue-300" />
                 </div>
-              )}
-
-              {/* Login Form */}
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* NIK Input */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-200 mb-2">
-                    NIK (Nomor Induk Karyawan)
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                      type="text"
-                      value={nik}
-                      onChange={(e) => setNik(e.target.value)}
-                      placeholder="Masukkan NIK Anda"
-                      className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                  <p className="mt-2 text-xs text-slate-400">
-                    Ketik "admin" untuk login sebagai admin
-                  </p>
-                </div>
-
-                {/* Password Input */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-200 mb-2">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Masukkan password"
-                      className="w-full pl-12 pr-12 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Remember Me & Forgot Password */}
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 border-slate-400 rounded bg-white/5 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-slate-300">Ingat saya</span>
-                  </label>
-                  <Link href="#" className="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors">
-                    Lupa password?
-                  </Link>
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan email Anda"
+                  className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   disabled={isLoading}
-                  className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            {/* Password Input */}
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-medium text-blue-100">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-blue-300" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan password Anda"
+                  className="w-full pl-12 pr-12 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-blue-300 hover:text-blue-200 transition-colors"
+                  disabled={isLoading}
                 >
-                  {isLoading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Memproses...</span>
-                    </>
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <>
-                      <span>Login</span>
-                      <ArrowRight className="w-5 h-5" />
-                    </>
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
-              </form>
+              </div>
+            </div>
 
-              {/* Register Link */}
-              <p className="mt-6 text-center text-sm text-slate-300">
+            {/* Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="ml-2 text-blue-200">Ingat saya</span>
+              </label>
+              <button
+                type="button"
+                className="text-blue-300 hover:text-blue-200 transition-colors"
+              >
+                Lupa password?
+              </button>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                  Memproses...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-transparent text-blue-300">atau</span>
+              </div>
+            </div>
+
+            {/* Register Link */}
+            <div className="text-center">
+              <p className="text-blue-200">
                 Belum punya akun?{' '}
-                <Link href="/register" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
-                  Daftar sekarang
+                <Link
+                  href="/register"
+                  className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+                >
+                  Daftar di sini
                 </Link>
               </p>
             </div>
-          </div>
+          </form>
+        </div>
 
-          {/* Right Section - Hero & Stats */}
-          <div className="order-1 lg:order-2">
-            <div className="text-center lg:text-left space-y-8">
-              {/* Hero Text */}
-              <div className="space-y-4">
-                <h2 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
-                  Keselamatan Kerja Dimulai dari Pelatihan
-                </h2>
-                <p className="text-lg text-slate-300">
-                  Platform VR 360° untuk pelatihan K3 yang immersive dan interaktif
-                </p>
-              </div>
-
-              {/* Statistics Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
-                  <p className="text-4xl font-bold text-white mb-2">500+</p>
-                  <p className="text-sm text-slate-300">Pekerja Terlatih</p>
-                </div>
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
-                  <p className="text-4xl font-bold text-white mb-2">25+</p>
-                  <p className="text-sm text-slate-300">Modul K3</p>
-                </div>
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
-                  <p className="text-4xl font-bold text-white mb-2">98%</p>
-                  <p className="text-sm text-slate-300">Kepuasan</p>
-                </div>
-                <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
-                  <p className="text-4xl font-bold text-white mb-2">4.9</p>
-                  <p className="text-sm text-slate-300">Rating</p>
-                </div>
-              </div>
-
-              {/* Additional Info */}
-              <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-                <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 bg-blue-500/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Shield className="w-5 h-5 text-blue-300" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white mb-1">Sertifikat Resmi</h3>
-                    <p className="text-sm text-slate-300">
-                      Dapatkan sertifikat K3 yang diakui secara nasional setelah menyelesaikan pelatihan
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
+        {/* Info Text */}
+        <div className="mt-6 text-center">
+          <p className="text-blue-300/60 text-xs">
+            Dilindungi oleh sistem keamanan K3 VR Training
+          </p>
         </div>
       </div>
     </div>
