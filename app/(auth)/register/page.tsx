@@ -3,13 +3,17 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Lock, Eye, EyeOff, Loader2, ShieldCheck, CheckCircle2, IdCard, Briefcase, HardHat } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Loader2, ShieldCheck, CheckCircle2, IdCard, Briefcase, HardHat, Mail } from 'lucide-react';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
     nik: '',
+    email: '',
     password: '',
     confirmPassword: '',
     role: 'worker' as 'worker' | 'admin',
@@ -26,7 +30,6 @@ export default function RegisterPage() {
       ...prev,
       [name]: value
     }));
-    // Clear error untuk field yang sedang diubah
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -46,28 +49,30 @@ export default function RegisterPage() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Validasi Nama
     if (!formData.name.trim()) {
       newErrors.name = 'Nama lengkap wajib diisi';
     } else if (formData.name.trim().length < 3) {
       newErrors.name = 'Nama minimal 3 karakter';
     }
 
-    // Validasi NIK
     if (!formData.nik.trim()) {
       newErrors.nik = 'NIK wajib diisi';
     } else if (formData.nik.trim().length < 5) {
       newErrors.nik = 'NIK minimal 5 karakter';
     }
 
-    // Validasi Password
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email wajib diisi';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Format email tidak valid';
+    }
+
     if (!formData.password) {
       newErrors.password = 'Password wajib diisi';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password minimal 6 karakter';
     }
 
-    // Validasi Konfirmasi Password
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Konfirmasi password wajib diisi';
     } else if (formData.password !== formData.confirmPassword) {
@@ -81,23 +86,60 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validasi form
     if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
 
-    // Simulasi API call dengan delay 1.5 detik
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // 1. Buat akun di Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+
+      // 2. Simpan data profil di Firestore (pakai UID sebagai doc ID)
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        nik: formData.nik,
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        status: "active",
+        department: "",
+        phone: "",
+        avatar_url: "",
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+      });
+
+      // 3. Tampilkan success screen
       setIsSuccess(true);
 
-      // Setelah 2 detik, redirect ke login
+      // 4. Redirect ke login setelah 2 detik
       setTimeout(() => {
         router.push('/login');
       }, 2000);
-    }, 1500);
+
+    } catch (err: any) {
+      switch (err.code) {
+        case 'auth/email-already-in-use':
+          setErrors({ email: 'Email sudah terdaftar. Gunakan email lain.' });
+          break;
+        case 'auth/invalid-email':
+          setErrors({ email: 'Format email tidak valid.' });
+          break;
+        case 'auth/weak-password':
+          setErrors({ password: 'Password terlalu lemah. Minimal 6 karakter.' });
+          break;
+        default:
+          setErrors({ name: 'Gagal mendaftar. Silakan coba lagi.' });
+          console.error('Register error:', err);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Success State Screen
@@ -202,6 +244,33 @@ export default function RegisterPage() {
               </div>
               {errors.nik && (
                 <p className="text-red-300 text-xs mt-1">{errors.nik}</p>
+              )}
+            </div>
+
+            {/* Email Input */}
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-medium text-blue-100">
+                Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-blue-300" />
+                </div>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="Masukkan email"
+                  className={`w-full pl-12 pr-4 py-3 bg-white/5 border ${
+                    errors.email ? 'border-red-500/50' : 'border-white/10'
+                  } rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-red-300 text-xs mt-1">{errors.email}</p>
               )}
             </div>
 
@@ -345,7 +414,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-500 hover:bg-blue-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center"
             >
               {isLoading ? (
                 <>
